@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phân quyền tài khoản | Video Admin Demo</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <script src="vendor/sql-wasm.js"></script>
+  <script src="vendor/supabase.js"></script>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+    <!-- Sidebar -->
+    <aside class="app-sidebar">
+      <div class="sidebar-header">
+        <a href="dashboard.html" class="brand-logo">
+          <div class="brand-icon">
+            <svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"></polygon></svg>
+          </div>
+          <span class="brand-text">VideoAdmin</span>
+        </a>
+        <button id="sidebarCloseBtn" class="sidebar-close-btn" aria-label="Đóng menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Quản trị</div>
+        <a href="dashboard.html" class="nav-item">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <span>Dashboard</span>
+        </a>
+        <a href="videos.html" class="nav-item">
+          <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+          <span>Quản lý video</span>
+        </a>
+        <a href="permissions.html" class="nav-item active" data-role-required="admin">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <span>Phân quyền</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="demo-disclaimer-pill">
+          <strong>Local Demo · No Backend</strong>
+          Dữ liệu lưu bằng SQLite WebAssembly và IndexedDB trên trình duyệt này.
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="app-main">
+      <header class="app-header">
+        <div class="header-left">
+          <button id="menuToggleBtn" class="menu-toggle-btn" aria-label="Mở menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+          <div class="breadcrumb-trail">
+            Trang chủ / <span>Phân quyền</span>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="demo-chip">
+            <span class="demo-chip-dot"></span>
+            Dữ liệu demo
+          </div>
+
+          <div class="user-menu-wrapper">
+            <button id="userMenuBtn" class="user-profile-btn" aria-label="Menu tài khoản">
+              <div id="headerUserAvatar" class="user-avatar">AD</div>
+              <div class="user-info-text">
+                <div id="headerUserName" class="user-name">Quản trị viên</div>
+                <div id="headerUserRole" class="user-role">admin@local</div>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+
+            <div id="userDropdown" class="user-dropdown">
+              <a href="#" id="logoutBtn" class="dropdown-item danger">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                <span>Đăng xuất</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="page-container">
+        <div class="page-header">
+          <div class="page-header-text">
+            <h1>Phân quyền tài khoản</h1>
+            <p>Quản lý vai trò (ADMIN / USER) và quyền hạn của các tài khoản trong hệ thống</p>
+          </div>
+        </div>
+
+        <!-- Role Summary Cards -->
+        <div class="kpi-grid" style="margin-bottom: var(--space-6);">
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">Tổng số tài khoản</span>
+              <div class="kpi-icon-wrapper kpi-icon-blue">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              </div>
+            </div>
+            <div id="statTotalUsers" class="kpi-value">...</div>
+            <div class="kpi-caption">Tài khoản đã tạo trong hệ thống</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">Quản trị viên (ADMIN)</span>
+              <div class="kpi-icon-wrapper kpi-icon-green">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              </div>
+            </div>
+            <div id="statAdminCount" class="kpi-value">...</div>
+            <div class="kpi-caption">Có toàn quyền quản lý video và phân quyền</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">Người dùng (USER)</span>
+              <div class="kpi-icon-wrapper kpi-icon-amber">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              </div>
+            </div>
+            <div id="statUserCount" class="kpi-value">...</div>
+            <div class="kpi-caption">Chỉ xem video, không vào được trang phân quyền</div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="card" style="margin-bottom: var(--space-6); padding: var(--space-4);">
+          <div class="table-toolbar" style="margin-bottom: 0;">
+            <div class="search-box">
+              <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" id="searchInput" class="input-text search-input" placeholder="Tìm theo tên hoặc email..." />
+            </div>
+
+            <div class="filter-group">
+              <select id="roleFilter" class="select" style="min-width: 160px;">
+                <option value="">Tất cả vai trò</option>
+                <option value="admin">Quản trị viên (ADMIN)</option>
+                <option value="user">Người dùng (USER)</option>
+              </select>
+
+              <button type="button" id="resetFiltersBtn" class="btn btn-ghost btn-sm" title="Đặt lại bộ lọc">
+                Đặt lại
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Table Card -->
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Tài khoản</th>
+                  <th style="width: 120px;">ID</th>
+                  <th style="width: 140px;">Vai trò</th>
+                  <th style="width: 130px;">Ngày tạo</th>
+                  <th style="width: 170px;">Đăng nhập cuối</th>
+                  <th style="width: 130px; text-align: right;">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="pagination-bar">
+            <div id="paginationInfo" class="pagination-info">Hiển thị ...</div>
+            <div class="pagination-controls">
+              <button type="button" id="prevPageBtn" class="btn btn-secondary btn-sm" disabled>
+                &larr; Trang trước
+              </button>
+              <button type="button" id="nextPageBtn" class="btn btn-secondary btn-sm" disabled>
+                Trang sau &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Edit Role Modal -->
+  <div id="roleModal" class="modal-backdrop">
+    <div class="modal-dialog" style="max-width: 520px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Cập nhật quyền hạn tài khoản</h2>
+        <button type="button" id="closeRoleModalBtn" class="modal-close-btn" aria-label="Đóng">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- User Info Summary -->
+        <div style="background: var(--surface-muted); border: 1px solid var(--border); border-radius: var(--radius-control); padding: 14px 16px; margin-bottom: 20px;">
+          <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 2px;">Tài khoản được chọn:</div>
+          <div id="editUserName" style="font-weight: 700; color: var(--text-primary); font-size: 1.05rem;">...</div>
+          <div id="editUserEmail" style="font-size: 0.875rem; color: var(--text-secondary);">...</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="margin-bottom: 8px;">Chọn vai trò (Role):</label>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <label class="radio-card" style="padding: 12px 14px; align-items: flex-start; gap: 12px;">
+              <input type="radio" name="userRoleChoice" id="roleAdminRadio" value="admin" style="margin-top: 3px;" />
+              <div>
+                <div style="font-weight: 600; color: var(--brand); display: flex; align-items: center; gap: 6px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                  ADMIN (Quản trị viên)
+                </div>
+                <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 2px;">
+                  Toàn quyền quản lý thư viện video, xem báo cáo thống kê và vào trang Phân quyền tài khoản.
+                </div>
+              </div>
+            </label>
+
+            <label class="radio-card" style="padding: 12px 14px; align-items: flex-start; gap: 12px;">
+              <input type="radio" name="userRoleChoice" id="roleUserRadio" value="user" style="margin-top: 3px;" />
+              <div>
+                <div style="font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                  USER (Người dùng)
+                </div>
+                <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 2px;">
+                  Chỉ được xem danh mục và xem trước video. Không có quyền truy cập vào trang Phân quyền.
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div id="selfEditWarning" style="display: none; background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-control); padding: 12px; margin-top: 14px; font-size: 0.8125rem; color: #92400e; line-height: 1.4;">
+          ⚠️ <strong>Lưu ý:</strong> Bạn đang chỉnh sửa quyền của chính mình. Nếu bạn chuyển vai trò thành USER, bạn sẽ mất quyền truy cập vào trang Phân quyền này sau khi lưu.
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" id="cancelRoleBtn" class="btn btn-secondary">Hủy</button>
+        <button type="button" id="saveRoleBtn" class="btn btn-primary">Lưu thay đổi</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initPermissionsPage } from './js/pages/permissions-page.js';
+    initPermissionsPage().catch(err => {
+      console.error('Lỗi khởi động trang Phân quyền:', err);
+      const tbody = document.getElementById('usersTableBody');
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--danger);padding:24px;">Lỗi: ${err.message}</td></tr>`;
+      }
+    });
+  </script>
+</body>
+</html>

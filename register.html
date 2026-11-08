@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng ký tài khoản | Video Admin Demo</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/auth.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <script src="vendor/sql-wasm.js"></script>
+  <script src="vendor/supabase.js"></script>
+</head>
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-container">
+      <div class="auth-header">
+        <a href="index.html" class="auth-logo">
+          <div class="brand-icon">
+            <svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"></polygon></svg>
+          </div>
+          <span class="brand-text">VideoAdmin</span>
+        </a>
+        <h1 class="auth-title">Đăng ký tài khoản</h1>
+        <p class="auth-subtitle">Tạo tài khoản người dùng mới trên trình duyệt này</p>
+      </div>
+
+      <div class="auth-card">
+        <div id="authAlert" class="toast-error" style="display:none; padding:12px; border-radius:8px; margin-bottom:16px; font-size:0.875rem;"></div>
+
+        <form id="registerForm" novalidate>
+          <div class="form-group">
+            <label for="fullName" class="form-label">Họ và tên <span class="required">*</span></label>
+            <input type="text" id="fullName" class="input-text" placeholder="Nguyễn Văn A" autocomplete="name" required />
+            <div id="fullNameError" class="input-error-msg visible"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="email" class="form-label">Email <span class="required">*</span></label>
+            <input type="email" id="email" class="input-text" placeholder="name@example.com" autocomplete="email" required />
+            <div id="emailError" class="input-error-msg visible"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="password" class="form-label">Mật khẩu <span class="required">*</span></label>
+            <input type="password" id="password" class="input-text" placeholder="Tối thiểu 8 ký tự" autocomplete="new-password" required />
+            <div id="passwordError" class="input-error-msg visible"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword" class="form-label">Xác nhận mật khẩu <span class="required">*</span></label>
+            <input type="password" id="confirmPassword" class="input-text" placeholder="Nhập lại mật khẩu" autocomplete="new-password" required />
+            <div id="confirmPasswordError" class="input-error-msg visible"></div>
+          </div>
+
+          <button type="submit" id="submitBtn" class="btn btn-primary" style="width:100%; margin-top:8px;">
+            Đăng ký
+          </button>
+        </form>
+
+        <div style="margin-top:20px; text-align:center; font-size:0.875rem;">
+          Đã có tài khoản? <a href="login.html" style="font-weight:600;">Đăng nhập</a>
+        </div>
+      </div>
+
+      <div class="auth-demo-notice">
+        <strong>Lưu ý:</strong>
+        Hệ thống hỗ trợ kết nối Supabase Cloud & SQLite Local. Sau khi đăng ký, bạn sẽ nhận được một mã khôi phục để dùng khi quên mật khẩu.
+      </div>
+
+      <div style="display:flex; justify-content:center; margin-top:14px;">
+        <button type="button" id="supabaseLoginBadge" class="supabase-badge" title="Xem thông tin Supabase">
+          <span class="supabase-badge-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M21.362 9.354H12V.312a.312.312 0 0 0-.582-.16L2.43 14.646A.312.312 0 0 0 2.638 15.1h9.362v9.042a.312.312 0 0 0 .582.16l8.988-14.494a.312.312 0 0 0-.208-.454Z"/>
+            </svg>
+          </span>
+          <span class="supabase-badge-dot"></span>
+          <span class="supabase-badge-text">Supabase: Đang kết nối...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recovery Code Display Modal -->
+  <div id="recoveryModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 class="modal-title">Lưu mã khôi phục của bạn</h2>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:12px;">
+          Đăng ký tài khoản thành công! Dưới đây là <strong>mã khôi phục tài khoản (Recovery Code)</strong> của bạn.
+        </p>
+
+        <div class="recovery-code-card">
+          <div style="font-size:0.75rem; font-weight:600; color:var(--text-secondary); text-transform:uppercase;">Mã khôi phục duy nhất:</div>
+          <div id="recoveryCodeText" class="recovery-code-val">------</div>
+          <button type="button" id="copyRecoveryBtn" class="btn btn-secondary btn-sm" style="align-self:center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Sao chép mã khôi phục
+          </button>
+        </div>
+
+        <div class="recovery-instructions">
+          ⚠️ <strong>Quan trọng:</strong> Vì ứng dụng không có backend và không gửi email, mã này là cách duy nhất để lấy lại quyền truy cập nếu bạn quên mật khẩu. Mã chỉ hiển thị <strong>duy nhất một lần</strong>.
+        </div>
+
+        <label class="recovery-confirm-check">
+          <input type="checkbox" id="confirmSavedCheck" />
+          <span>Tôi xác nhận đã sao chép và lưu trữ mã khôi phục này an toàn.</span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="proceedToLoginBtn" class="btn btn-primary" disabled>
+          Tiếp tục đến Đăng nhập
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initRegisterPage } from './js/auth/auth-pages.js';
+    initRegisterPage();
+  </script>
+</body>
+</html>

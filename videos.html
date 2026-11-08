@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý video | Video Admin Demo</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <script src="vendor/sql-wasm.js"></script>
+  <script src="vendor/supabase.js"></script>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+    <!-- Sidebar -->
+    <aside class="app-sidebar">
+      <div class="sidebar-header">
+        <a href="dashboard.html" class="brand-logo">
+          <div class="brand-icon">
+            <svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"></polygon></svg>
+          </div>
+          <span class="brand-text">VideoAdmin</span>
+        </a>
+        <button id="sidebarCloseBtn" class="sidebar-close-btn" aria-label="Đóng menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Quản trị</div>
+        <a href="dashboard.html" class="nav-item">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <span>Dashboard</span>
+        </a>
+        <a href="videos.html" class="nav-item active">
+          <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+          <span>Quản lý video</span>
+        </a>
+        <a href="permissions.html" class="nav-item" data-role-required="admin">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <span>Phân quyền</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="demo-disclaimer-pill">
+          <strong>Local Demo · No Backend</strong>
+          Dữ liệu lưu bằng SQLite WebAssembly và IndexedDB trên trình duyệt này.
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="app-main">
+      <header class="app-header">
+        <div class="header-left">
+          <button id="menuToggleBtn" class="menu-toggle-btn" aria-label="Mở menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+          <div class="breadcrumb-trail">
+            Trang chủ / <span>Quản lý video</span>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="demo-chip">
+            <span class="demo-chip-dot"></span>
+            Dữ liệu demo
+          </div>
+
+          <div class="user-menu-wrapper">
+            <button id="userMenuBtn" class="user-profile-btn" aria-label="Menu tài khoản">
+              <div id="headerUserAvatar" class="user-avatar">AD</div>
+              <div class="user-info-text">
+                <div id="headerUserName" class="user-name">Quản trị viên</div>
+                <div id="headerUserRole" class="user-role">admin@local</div>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+
+            <div id="userDropdown" class="user-dropdown">
+              <a href="#" id="logoutBtn" class="dropdown-item danger">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                <span>Đăng xuất</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="page-container">
+        <div class="page-header">
+          <div class="page-header-text">
+            <h1>Quản lý video</h1>
+            <p>Tìm kiếm, tải lên video, cập nhật thông tin và xem trước</p>
+          </div>
+          <div class="page-actions">
+            <button id="exportVideosDbBtn" class="btn btn-secondary" title="Tải bản sao database SQLite videos.db">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Xuất .db
+            </button>
+            <button id="openAddVideoBtn" class="btn btn-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Thêm video
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="card" style="margin-bottom: var(--space-6); padding: var(--space-4);">
+          <div class="table-toolbar" style="margin-bottom:0;">
+            <div class="search-box">
+              <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" id="searchInput" class="input-text search-input" placeholder="Tìm theo tiêu đề video..." />
+            </div>
+
+            <div class="filter-group">
+              <select id="categoryFilter" class="select" style="min-width: 160px;">
+                <option value="">Tất cả danh mục</option>
+              </select>
+
+              <select id="statusFilter" class="select" style="min-width: 140px;">
+                <option value="">Tất cả trạng thái</option>
+                <option value="published">Công khai</option>
+                <option value="draft">Bản nháp</option>
+                <option value="archived">Lưu trữ</option>
+              </select>
+
+              <select id="sortFilter" class="select" style="min-width: 160px;">
+                <option value="created_desc">Mới nhất trước</option>
+                <option value="created_asc">Cũ nhất trước</option>
+                <option value="views_desc">Lượt xem cao nhất</option>
+                <option value="views_asc">Lượt xem thấp nhất</option>
+                <option value="title_asc">Tiêu đề (A-Z)</option>
+              </select>
+
+              <button type="button" id="resetFiltersBtn" class="btn btn-ghost btn-sm" title="Đặt lại bộ lọc">
+                Đặt lại
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Table Card -->
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 110px;">ID</th>
+                  <th>Video</th>
+                  <th>Danh mục</th>
+                  <th style="width: 120px;">Lượt xem</th>
+                  <th style="width: 130px;">Trạng thái</th>
+                  <th style="width: 140px; text-align: right;">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="videosTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="pagination-bar">
+            <div id="paginationInfo" class="pagination-info">Hiển thị ...</div>
+            <div class="pagination-controls">
+              <button type="button" id="prevPageBtn" class="btn btn-secondary btn-sm" disabled>
+                &larr; Trang trước
+              </button>
+              <button type="button" id="nextPageBtn" class="btn btn-secondary btn-sm" disabled>
+                Trang sau &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Add / Edit Video Modal -->
+  <div id="videoModal" class="modal-backdrop">
+    <div class="modal-dialog" style="max-width: 620px;">
+      <div class="modal-header">
+        <h2 id="videoModalTitle" class="modal-title">Thêm video mới</h2>
+        <button type="button" id="closeVideoModalBtn" class="modal-close-btn" aria-label="Đóng form">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <form id="videoForm" novalidate>
+        <div class="modal-body">
+          <div id="videoFormAlert" class="toast-error" style="display:none; padding:10px; border-radius:8px; margin-bottom:14px; font-size:0.875rem;"></div>
+
+          <div class="form-group">
+            <label for="formVideoTitle" class="form-label">Tiêu đề video <span class="required">*</span></label>
+            <input type="text" id="formVideoTitle" class="input-text" placeholder="Nhập tiêu đề (3–120 ký tự)" required />
+          </div>
+
+          <div class="form-group">
+            <label for="formVideoDesc" class="form-label">Mô tả video</label>
+            <textarea id="formVideoDesc" class="textarea" placeholder="Nhập tóm tắt nội dung video..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Nguồn video <span class="required">*</span></label>
+            <div class="radio-group">
+              <label class="radio-card">
+                <input type="radio" name="sourceType" id="formSourceUrl" value="url" checked />
+                <span>URL trực tiếp (MP4/WebM)</span>
+              </label>
+              <label class="radio-card">
+                <input type="radio" name="sourceType" id="formSourceLocal" value="local" />
+                <span>Tải tệp từ máy (IndexedDB Blob)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- URL Source Input -->
+          <div id="urlGroup" class="form-group">
+            <label for="formVideoUrl" class="form-label">Đường dẫn URL video trực tiếp <span class="required">*</span></label>
+            <input type="url" id="formVideoUrl" class="input-text" placeholder="https://domain.com/video.mp4 hoặc assets/demo/demo-video.webm" />
+            <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:4px;">
+              * Lưu ý: Không dùng link xem YouTube thông thường (watch URL) vì trình duyệt không thể phát trực tiếp qua thẻ video HTML5.
+            </div>
+          </div>
+
+          <!-- Local File Input -->
+          <div id="localFileGroup" class="form-group" style="display:none;">
+            <label for="formVideoFile" class="form-label">Chọn tệp video cục bộ <span class="required">*</span></label>
+            <input type="file" id="formVideoFile" accept="video/mp4,video/webm,video/ogg" class="input-text" style="padding-top:6px;" />
+            <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:4px;">
+              Định dạng: MP4, WebM, OGG. Giới hạn demo khuyến nghị: tối đa 30 MB/file để tránh vượt quá dung lượng trình duyệt.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Ảnh bìa (Thumbnail)</label>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <input type="file" id="formThumbnailFile" accept="image/jpeg,image/png,image/webp,image/svg+xml" class="input-text" style="padding-top:6px;" />
+              <input type="url" id="formThumbnailUrl" class="input-text" placeholder="Hoặc dán URL ảnh bìa https://..." />
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:4px;">
+              Nếu để trống, hệ thống sẽ sử dụng ảnh placeholder mặc định.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Danh mục video <span style="font-weight:normal; font-size:0.8125rem; color:var(--text-secondary);">(Bắt buộc chọn ít nhất 1 nếu Công khai)</span></label>
+            <div id="formCategoriesContainer" class="category-tags-select">
+              <!-- Dynamically rendered -->
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="formStatus" class="form-label">Trạng thái phát hành</label>
+            <select id="formStatus" class="select">
+              <option value="draft">Bản nháp (Draft)</option>
+              <option value="published">Công khai (Published)</option>
+              <option value="archived">Lưu trữ (Archived)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="cancelVideoBtn" class="btn btn-secondary">Hủy</button>
+          <button type="submit" id="saveVideoBtn" class="btn btn-primary">Lưu video</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal-backdrop">
+    <div class="modal-dialog" style="max-width: 460px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Xác nhận xóa video</h2>
+        <button type="button" id="closeDeleteModalBtn" class="modal-close-btn" aria-label="Đóng">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.9375rem; color: var(--text-primary); margin-bottom: 8px;">
+          Bạn có chắc chắn muốn xóa video <strong id="deleteVideoTitle">...</strong>?
+        </p>
+        <p style="font-size: 0.8125rem; color: var(--danger); line-height: 1.4;">
+          ⚠️ Hành động này sẽ xóa vĩnh viễn bản ghi video, toàn bộ lịch sử lượt xem hàng ngày và tệp phương tiện cục bộ (IndexedDB Blob). Không thể khôi phục sau khi xóa.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="cancelDeleteBtn" class="btn btn-secondary">Hủy</button>
+        <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Xóa video</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Video Preview Modal -->
+  <div id="previewModal" class="modal-backdrop">
+    <div class="modal-dialog" style="max-width: 680px;">
+      <div class="modal-header">
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <h2 id="previewModalTitle" class="modal-title">Xem trước video</h2>
+          <div id="previewVideoMeta" style="font-size:0.8125rem; color:var(--text-secondary);"></div>
+        </div>
+        <button type="button" id="closePreviewModalBtn" class="modal-close-btn" aria-label="Đóng">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body" style="padding: 0; background: #000; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height: 320px;">
+        <video id="previewPlayer" controls preload="metadata" style="width: 100%; max-height: 420px; display:block;"></video>
+        <div id="previewErrorMessage" style="display:none; color:#f87171; padding:24px; text-align:center; font-size:0.875rem;"></div>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <span style="font-size:0.75rem; color:var(--text-secondary);">
+          * Lượt xem nội bộ tăng 1 lần khi video bắt đầu phát thành công trên trình duyệt này.
+        </span>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('closePreviewModalBtn').click();">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initVideosPage } from './js/pages/videos-page.js';
+    initVideosPage();
+  </script>
+</body>
+</html>

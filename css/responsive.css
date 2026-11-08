@@ -1,0 +1,123 @@
+/* Responsive Styles */
+
+/* Tablets and below (< 1024px) */
+@media (max-width: 1023px) {
+  :root {
+    --sidebar-width: 240px;
+  }
+
+  .app-sidebar {
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .app-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-close-btn {
+    display: inline-flex;
+  }
+
+  .menu-toggle-btn {
+    display: inline-flex;
+  }
+
+  .app-main {
+    margin-left: 0;
+  }
+
+  .app-header {
+    padding: 0 var(--space-5);
+  }
+
+  .page-container {
+    padding: var(--space-5);
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Mobile Devices (< 768px) */
+@media (max-width: 767px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .page-actions .btn {
+    flex: 1;
+  }
+
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-box {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .filter-group select {
+    width: 100%;
+  }
+
+  .card-header {
+    padding: var(--space-4);
+  }
+
+  .card-body {
+    padding: var(--space-4);
+  }
+
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .chart-segmented-control {
+    width: 100%;
+    display: flex;
+  }
+
+  .segment-btn {
+    flex: 1;
+    text-align: center;
+  }
+
+  .canvas-container {
+    min-height: 260px;
+    overflow-x: auto;
+  }
+
+  .canvas-container canvas {
+    min-width: 320px;
+    height: 260px !important;
+  }
+
+  .auth-card {
+    padding: var(--space-5);
+  }
+
+  .user-info-text {
+    display: none;
+  }
+}

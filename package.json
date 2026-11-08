@@ -1,0 +1,11 @@
+{
+  "name": "video-admin-local",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "python -m http.server 8000"
+  },
+  "dependencies": {
+    "sql.js": "^1.15.2"
+  }
+}
